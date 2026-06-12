@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -18,19 +18,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getOrgContext } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 
 export const metadata = { title: "Tableau de bord" };
-export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  // NB : compteurs globaux pour la démo. Le cloisonnement par organisation
-  // arrivera avec l'authentification (Jalon 1).
+  const { orgId } = await getOrgContext();
+
   const [products, suppliers, openRfq, purchaseOrders] = await Promise.all([
-    prisma.product.count(),
-    prisma.supplier.count(),
-    prisma.rfq.count({ where: { status: "SENT" } }),
-    prisma.purchaseOrder.count(),
+    prisma.product.count({ where: { orgId } }),
+    prisma.supplier.count({ where: { orgId } }),
+    prisma.rfq.count({ where: { orgId, status: "SENT" } }),
+    prisma.purchaseOrder.count({ where: { orgId } }),
   ]);
 
   const stats = [
@@ -110,10 +110,13 @@ export default async function DashboardPage() {
                 <CardDescription>{step.description}</CardDescription>
               </CardHeader>
               <CardContent className="mt-auto">
-                <Button variant="outline" size="sm" render={<Link href={step.href} />}>
+                <Link
+                  href={step.href}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
                   Ouvrir
                   <ArrowRight className="size-4" />
-                </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

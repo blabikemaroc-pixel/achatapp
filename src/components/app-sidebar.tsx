@@ -54,7 +54,7 @@ const groups = [
 const activeClass =
   "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:hover:bg-sidebar-primary";
 
-export function AppSidebar() {
+export function AppSidebar({ orgName }: { orgName?: string | null }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -63,12 +63,19 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="flex size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
             <ShoppingCart className="size-4" />
           </div>
-          <span className="text-base font-semibold text-sidebar-foreground">
-            {APP_NAME}
-          </span>
+          <div className="flex min-w-0 flex-col">
+            <span className="text-sm font-semibold leading-tight text-white">
+              {APP_NAME}
+            </span>
+            {orgName ? (
+              <span className="truncate text-xs leading-tight text-sidebar-foreground/70">
+                {orgName}
+              </span>
+            ) : null}
+          </div>
         </div>
       </SidebarHeader>
 
