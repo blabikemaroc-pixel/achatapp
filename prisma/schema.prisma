@@ -1,0 +1,312 @@
+// Procurement App — schéma de données
+// Cloisonnement multi-tenant : (presque) tout est rattaché à une Organization (orgId).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────── Auth & Tenancy ────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members        Membership[]
+  categories     Category[]
+  products       Product[]
+  suppliers      Supplier[]
+  rfqs           Rfq[]
+  purchaseOrders PurchaseOrder[]
+}
+
+enum Role {
+  ADMIN
+  BUYER
+  VIEWER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  image        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+  sessions    Session[]
+  accounts    Account[]
+}
+
+model Membership {
+  id     String @id @default(cuid())
+  role   Role   @default(ADMIN)
+  userId String
+  orgId  String
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+// Modèles de l'adaptateur Auth.js (pour OAuth / magic-link e-mail plus tard)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ──────────────────────────── Catalogue ────────────────────────────
+
+model Category {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  createdAt DateTime @default(now())
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([orgId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  orgId       String
+  categoryId  String?
+  name        String
+  reference   String?
+  unit        String   @default("unité")
+  defaultQty  Float?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplierProducts SupplierProduct[]
+  rfqItems         RfqItem[]
+  quoteItems       QuoteItem[]
+  poItems          POItem[]
+
+  @@index([orgId])
+  @@index([categoryId])
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  orgId        String
+  name         String
+  contactName  String?
+  email        String
+  phone        String?
+  address      String?
+  paymentTerms String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  supplierProducts SupplierProduct[]
+  rfqRecipients    RfqRecipient[]
+  purchaseOrders   PurchaseOrder[]
+
+  @@index([orgId])
+}
+
+// Quel fournisseur peut fournir quel produit
+model SupplierProduct {
+  id         String @id @default(cuid())
+  supplierId String
+  productId  String
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, productId])
+  @@index([productId])
+}
+
+// ──────────────────────────── RFQ / Devis ────────────────────────────
+
+enum RfqStatus {
+  DRAFT
+  SENT
+  CLOSED
+}
+
+model Rfq {
+  id        String    @id @default(cuid())
+  orgId     String
+  reference String
+  title     String?
+  status    RfqStatus @default(DRAFT)
+  notes     String?
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  org        Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items      RfqItem[]
+  recipients RfqRecipient[]
+
+  @@unique([orgId, reference])
+  @@index([orgId])
+}
+
+model RfqItem {
+  id        String @id @default(cuid())
+  rfqId     String
+  productId String
+  quantity  Float
+
+  rfq     Rfq     @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([rfqId])
+}
+
+enum RecipientStatus {
+  PENDING
+  SENT
+  RESPONDED
+  DECLINED
+}
+
+// Un fournisseur destinataire d'une RFQ = un lien magique unique
+model RfqRecipient {
+  id          String          @id @default(cuid())
+  rfqId       String
+  supplierId  String
+  token       String          @unique
+  status      RecipientStatus @default(PENDING)
+  sentAt      DateTime?
+  respondedAt DateTime?
+  createdAt   DateTime        @default(now())
+
+  rfq      Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  quote    Quote?
+
+  @@unique([rfqId, supplierId])
+  @@index([supplierId])
+}
+
+enum QuoteStatus {
+  RECEIVED
+  SELECTED
+  REJECTED
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  recipientId  String      @unique
+  deliveryDays Int?
+  paymentTerms String?
+  shippingCost Float?      @default(0)
+  validUntil   DateTime?
+  notes        String?
+  status       QuoteStatus @default(RECEIVED)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  recipient RfqRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  items     QuoteItem[]
+}
+
+model QuoteItem {
+  id        String @id @default(cuid())
+  quoteId   String
+  productId String
+  unitPrice Float
+  minQty    Float?
+
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId])
+}
+
+// ──────────────────────────── Bon de commande ────────────────────────────
+
+enum POStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id         String    @id @default(cuid())
+  orgId      String
+  reference  String
+  supplierId String
+  quoteId    String?
+  status     POStatus  @default(DRAFT)
+  notes      String?
+  total      Float     @default(0)
+  pdfPath    String?
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  supplier Supplier     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items    POItem[]
+
+  @@unique([orgId, reference])
+  @@index([orgId])
+}
+
+model POItem {
+  id        String @id @default(cuid())
+  poId      String
+  productId String
+  quantity  Float
+  unitPrice Float
+
+  po      PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([poId])
+}
