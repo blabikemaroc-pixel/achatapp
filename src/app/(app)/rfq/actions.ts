@@ -6,7 +6,13 @@ import { nanoid } from "nanoid";
 import { getOrgContext } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 import { rfqEmailTemplate, sendMail } from "@/lib/email";
-import { rfqSchema, type RfqInput } from "@/lib/validators";
+import { saveQuote } from "@/lib/quote";
+import {
+  quoteSchema,
+  rfqSchema,
+  type QuoteInput,
+  type RfqInput,
+} from "@/lib/validators";
 
 export async function createRfq(input: RfqInput) {
   const { orgId, orgName } = await getOrgContext();
@@ -89,4 +95,29 @@ export async function createRfq(input: RfqInput) {
   revalidatePath("/rfq");
   revalidatePath("/dashboard");
   return { success: true, id: rfq.id };
+}
+
+// Saisie manuelle d'un devis par l'acheteur (fournisseur ayant répondu hors app).
+export async function enterQuote(recipientId: string, input: QuoteInput) {
+  const { orgId } = await getOrgContext();
+  const parsed = quoteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Champs invalides." };
+  }
+
+  const recipient = await prisma.rfqRecipient.findFirst({
+    where: { id: recipientId, rfq: { orgId } },
+    include: { rfq: { include: { items: { select: { productId: true } } } } },
+  });
+  if (!recipient) return { error: "Destinataire introuvable." };
+
+  const res = await saveQuote(
+    recipientId,
+    recipient.rfq.items.map((i) => i.productId),
+    parsed.data,
+  );
+  if (res.error) return res;
+
+  revalidatePath(`/rfq/${recipient.rfqId}`);
+  return { success: true };
 }

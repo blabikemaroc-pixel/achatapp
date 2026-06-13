@@ -2,22 +2,12 @@ import { ShoppingCart } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  type QuoteFormItem,
+  type QuoteInitial,
+} from "@/components/quote/quote-form";
+import { QuotePortalClient } from "@/components/quote/quote-portal-client";
 import { prisma } from "@/lib/db";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
 export const metadata = { title: "Demande de prix" };
 
@@ -32,10 +22,11 @@ export default async function QuotePortalPage({
     where: { token },
     include: {
       supplier: { select: { name: true } },
+      quote: { include: { items: true } },
       rfq: {
         include: {
           items: {
-            include: { product: { select: { name: true, unit: true } } },
+            include: { product: { select: { id: true, name: true, unit: true } } },
           },
           org: { select: { name: true } },
         },
@@ -44,7 +35,35 @@ export default async function QuotePortalPage({
   });
   if (!recipient) notFound();
 
-  const { rfq, supplier } = recipient;
+  const { rfq, supplier, quote } = recipient;
+
+  const items: QuoteFormItem[] = rfq.items.map((it) => ({
+    productId: it.productId,
+    name: it.product.name,
+    unit: it.product.unit,
+    requestedQty: it.quantity,
+  }));
+
+  let initial: QuoteInitial | undefined;
+  if (quote) {
+    const prices: Record<string, string> = {};
+    const minQtys: Record<string, string> = {};
+    for (const qi of quote.items) {
+      prices[qi.productId] = String(qi.unitPrice);
+      if (qi.minQty != null) minQtys[qi.productId] = String(qi.minQty);
+    }
+    initial = {
+      deliveryDays: quote.deliveryDays,
+      paymentTerms: quote.paymentTerms,
+      shippingCost: quote.shippingCost,
+      validUntil: quote.validUntil
+        ? quote.validUntil.toISOString().slice(0, 10)
+        : null,
+      notes: quote.notes,
+      prices,
+      minQtys,
+    };
+  }
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 p-4 sm:p-8">
@@ -60,53 +79,29 @@ export default async function QuotePortalPage({
         </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Bonjour {supplier.name}</CardTitle>
-          <CardDescription>
-            <strong>{rfq.org.name}</strong> souhaite recevoir votre devis pour
-            les produits ci-dessous
-            {rfq.dueDate ? (
-              <> — réponse souhaitée avant le {formatDate(rfq.dueDate)}</>
-            ) : null}
-            .
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="overflow-hidden rounded-lg border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produit</TableHead>
-                  <TableHead className="text-right">Quantité</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rfq.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">
-                      {item.product.name}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatNumber(item.quantity)} {item.product.unit}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          {rfq.notes ? (
-            <p className="text-sm text-muted-foreground">{rfq.notes}</p>
+      <div className="space-y-1">
+        <p className="text-sm">
+          Bonjour <strong>{supplier.name}</strong>, merci d&apos;indiquer votre
+          meilleure offre
+          {rfq.dueDate ? (
+            <>
+              {" "}
+              avant le <strong>{formatDate(rfq.dueDate)}</strong>
+            </>
           ) : null}
-        </CardContent>
-      </Card>
+          .
+        </p>
+        {rfq.notes ? (
+          <p className="text-sm text-muted-foreground">{rfq.notes}</p>
+        ) : null}
+      </div>
 
-      <Card>
-        <CardContent className="py-6 text-center text-sm text-muted-foreground">
-          La saisie de votre prix et de vos conditions sera disponible ici très
-          prochainement.
-        </CardContent>
-      </Card>
+      <QuotePortalClient
+        token={token}
+        items={items}
+        initial={initial}
+        alreadyResponded={!!quote}
+      />
     </div>
   );
 }

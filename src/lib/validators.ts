@@ -89,3 +89,30 @@ export const rfqSchema = z.object({
     .min(1, "Sélectionnez au moins un fournisseur"),
 });
 export type RfqInput = z.infer<typeof rfqSchema>;
+
+export const quoteSchema = z.object({
+  deliveryDays: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().int().min(0, "Délai invalide").optional(),
+  ),
+  paymentTerms: z.string().trim().max(120, "120 caractères maximum").optional(),
+  shippingCost: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().min(0, "Montant invalide").optional(),
+  ),
+  validUntil: z.string().optional(),
+  notes: z.string().trim().max(1000, "1000 caractères maximum").optional(),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        unitPrice: z.coerce.number().positive("Prix invalide"),
+        minQty: z.preprocess(
+          (v) => (v === "" || v == null ? undefined : v),
+          z.coerce.number().positive("Quantité invalide").optional(),
+        ),
+      }),
+    )
+    .min(1, "Indiquez au moins un prix"),
+});
+export type QuoteInput = z.infer<typeof quoteSchema>;
