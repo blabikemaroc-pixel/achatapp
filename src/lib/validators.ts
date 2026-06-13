@@ -56,3 +56,18 @@ export const productFormSchema = z.object({
   categoryId: z.string(),
 });
 export type ProductFormValues = z.infer<typeof productFormSchema>;
+
+export const supplierSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Nom requis")
+    .max(120, "120 caractères maximum"),
+  contactName: z.string().trim().max(120, "120 caractères maximum").optional(),
+  email: z.email("Adresse e-mail invalide").max(160, "160 caractères maximum"),
+  phone: z.string().trim().max(40, "40 caractères maximum").optional(),
+  address: z.string().trim().max(300, "300 caractères maximum").optional(),
+  paymentTerms: z.string().trim().max(120, "120 caractères maximum").optional(),
+  notes: z.string().trim().max(1000, "1000 caractères maximum").optional(),
+});
+export type SupplierInput = z.infer<typeof supplierSchema>;
