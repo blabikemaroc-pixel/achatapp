@@ -86,6 +86,7 @@ export default async function RfqDetailPage({
   if (!rfq) notFound();
 
   const appUrl = process.env.APP_URL ?? "http://localhost:3010";
+  const respondedCount = rfq.recipients.filter((r) => r.quote).length;
   const qtyByProduct = new Map(rfq.items.map((i) => [i.productId, i.quantity]));
   const formItems: QuoteFormItem[] = rfq.items.map((i) => ({
     productId: i.productId,
@@ -109,7 +110,17 @@ export default async function RfqDetailPage({
         <ArrowLeft className="size-4" /> Retour aux demandes
       </Link>
 
-      <PageHeader title={rfq.reference} description={rfq.title ?? undefined} />
+      <PageHeader
+        title={rfq.reference}
+        description={rfq.title ?? undefined}
+        action={
+          respondedCount > 0 ? (
+            <Link href={`/rfq/${rfq.id}/compare`} className={buttonVariants()}>
+              Comparer les devis
+            </Link>
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
         <span>

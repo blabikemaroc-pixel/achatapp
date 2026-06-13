@@ -121,3 +121,28 @@ export async function enterQuote(recipientId: string, input: QuoteInput) {
   revalidatePath(`/rfq/${recipient.rfqId}`);
   return { success: true };
 }
+
+// Choisir le devis gagnant : le marque SELECTED, les autres de la même RFQ REJECTED.
+export async function selectQuote(quoteId: string) {
+  const { orgId } = await getOrgContext();
+
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, recipient: { rfq: { orgId } } },
+    include: { recipient: { select: { rfqId: true } } },
+  });
+  if (!quote) return { error: "Devis introuvable." };
+
+  const rfqId = quote.recipient.rfqId;
+  await prisma.$transaction([
+    prisma.quote.updateMany({
+      where: { recipient: { rfqId } },
+      data: { status: "REJECTED" },
+    }),
+    prisma.quote.update({ where: { id: quoteId }, data: { status: "SELECTED" } }),
+  ]);
+
+  revalidatePath(`/rfq/${rfqId}`);
+  revalidatePath(`/rfq/${rfqId}/compare`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
