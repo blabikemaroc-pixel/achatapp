@@ -71,3 +71,21 @@ export const supplierSchema = z.object({
   notes: z.string().trim().max(1000, "1000 caractères maximum").optional(),
 });
 export type SupplierInput = z.infer<typeof supplierSchema>;
+
+export const rfqSchema = z.object({
+  title: z.string().trim().max(120, "120 caractères maximum").optional(),
+  notes: z.string().trim().max(1000, "1000 caractères maximum").optional(),
+  dueDate: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: z.coerce.number().positive("Quantité invalide"),
+      }),
+    )
+    .min(1, "Sélectionnez au moins un produit"),
+  supplierIds: z
+    .array(z.string().min(1))
+    .min(1, "Sélectionnez au moins un fournisseur"),
+});
+export type RfqInput = z.infer<typeof rfqSchema>;
