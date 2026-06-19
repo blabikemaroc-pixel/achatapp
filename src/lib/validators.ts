@@ -69,6 +69,10 @@ export const supplierSchema = z.object({
   address: z.string().trim().max(300, "300 caractères maximum").optional(),
   paymentTerms: z.string().trim().max(120, "120 caractères maximum").optional(),
   notes: z.string().trim().max(1000, "1000 caractères maximum").optional(),
+  ice: z.string().trim().max(50, "50 caractères maximum").optional(),
+  rc: z.string().trim().max(50, "50 caractères maximum").optional(),
+  if: z.string().trim().max(50, "50 caractères maximum").optional(),
+  tp: z.string().trim().max(50, "50 caractères maximum").optional(),
 });
 export type SupplierInput = z.infer<typeof supplierSchema>;
 

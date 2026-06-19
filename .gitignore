@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# fichiers uploadés en local (en prod ils sont stockés en base)
+/public/uploads
+
+# documents de travail (devis, modèles…) à ne pas versionner/déployer
+*.docx
+*.doc
+*.pdf

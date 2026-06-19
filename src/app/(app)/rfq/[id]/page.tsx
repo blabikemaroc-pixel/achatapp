@@ -7,6 +7,7 @@ import {
   type QuoteFormItem,
   type QuoteInitial,
 } from "@/components/quote/quote-form";
+import { ManualEmailButton } from "@/components/rfq/manual-email-button";
 import { QuoteEntryButton } from "@/components/rfq/quote-entry-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { getOrgContext } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
+import { rfqEmailTemplate } from "@/lib/email";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 
 export const metadata = { title: "Demande de prix" };
@@ -66,7 +68,7 @@ export default async function RfqDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { orgId } = await getOrgContext();
+  const { orgId, orgName } = await getOrgContext();
 
   const rfq = await prisma.rfq.findFirst({
     where: { id, orgId },
@@ -76,7 +78,13 @@ export default async function RfqDetailPage({
       },
       recipients: {
         include: {
-          supplier: { select: { name: true, email: true } },
+          supplier: {
+            select: {
+              name: true,
+              email: true,
+              supplierProducts: { select: { productId: true } },
+            },
+          },
           quote: { include: { items: true } },
         },
         orderBy: { supplier: { name: "asc" } },
@@ -88,12 +96,16 @@ export default async function RfqDetailPage({
   const appUrl = process.env.APP_URL ?? "http://localhost:3010";
   const respondedCount = rfq.recipients.filter((r) => r.quote).length;
   const qtyByProduct = new Map(rfq.items.map((i) => [i.productId, i.quantity]));
-  const formItems: QuoteFormItem[] = rfq.items.map((i) => ({
-    productId: i.productId,
-    name: i.product.name,
-    unit: i.product.unit,
-    requestedQty: i.quantity,
-  }));
+  // Chaque fournisseur ne cote que les produits qu'il fournit (∩ demandés).
+  const itemsForSupplier = (suppliedIds: Set<string>): QuoteFormItem[] => {
+    const list = rfq.items.filter((i) => suppliedIds.has(i.productId));
+    return (list.length > 0 ? list : rfq.items).map((i) => ({
+      productId: i.productId,
+      name: i.product.name,
+      unit: i.product.unit,
+      requestedQty: i.quantity,
+    }));
+  };
 
   const quoteTotal = (quote: QuoteWithItems) =>
     quote.items.reduce(
@@ -182,6 +194,25 @@ export default async function RfqDetailPage({
                 const total = recipient.quote
                   ? quoteTotal(recipient.quote)
                   : null;
+                const supItems = itemsForSupplier(
+                  new Set(
+                    recipient.supplier.supplierProducts.map(
+                      (sp) => sp.productId,
+                    ),
+                  ),
+                );
+                const email = rfqEmailTemplate({
+                  orgName,
+                  supplierName: recipient.supplier.name,
+                  reference: rfq.reference,
+                  dueDate: rfq.dueDate,
+                  items: supItems.map((i) => ({
+                    name: i.name,
+                    quantity: i.requestedQty,
+                    unit: i.unit,
+                  })),
+                  link: `${appUrl}/quote/${recipient.token}`,
+                });
                 return (
                   <TableRow key={recipient.id}>
                     <TableCell>
@@ -203,13 +234,18 @@ export default async function RfqDetailPage({
                         <QuoteEntryButton
                           recipientId={recipient.id}
                           supplierName={recipient.supplier.name}
-                          items={formItems}
+                          items={supItems}
                           initial={
                             recipient.quote
                               ? toInitial(recipient.quote)
                               : undefined
                           }
                           hasQuote={!!recipient.quote}
+                        />
+                        <ManualEmailButton
+                          to={recipient.supplier.email}
+                          subject={email.subject}
+                          body={email.text}
                         />
                         <a
                           href={`${appUrl}/quote/${recipient.token}`}

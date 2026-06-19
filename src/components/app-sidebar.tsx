@@ -8,6 +8,9 @@ import {
   FolderTree,
   LayoutDashboard,
   Package,
+  PackageOpen,
+  ReceiptText,
+  CreditCard,
   Settings,
   ShoppingCart,
   Truck,
@@ -47,6 +50,19 @@ const groups = [
     items: [
       { title: "Demandes de prix", href: "/rfq", icon: FileText },
       { title: "Bons de commande", href: "/purchase-orders", icon: ClipboardList },
+    ],
+  },
+  {
+    label: "Logistique",
+    items: [
+      { title: "Bons de réception", href: "/receipts", icon: PackageOpen },
+    ],
+  },
+  {
+    label: "Comptabilité",
+    items: [
+      { title: "Factures", href: "/invoices", icon: ReceiptText },
+      { title: "Paiements", href: "/payments", icon: CreditCard },
     ],
   },
 ];

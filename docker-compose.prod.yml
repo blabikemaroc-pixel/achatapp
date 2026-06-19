@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: procurement_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:REPLACE_ME_SECURE_PASSWORD@db:5432/procurement?schema=public
+      - AUTH_URL=https://CLIENT.VOTRE-DOMAINE.COM
+      - AUTH_SECRET=REPLACE_ME_WITH_A_RANDOM_SECRET
+      - APP_URL=https://CLIENT.VOTRE-DOMAINE.COM
+      - SMTP_HOST=smtp.votredomaine.com
+      - SMTP_PORT=465
+      - SMTP_SECURE=true
+      - SMTP_USER=votre_email
+      - SMTP_PASS=votre_mot_de_passe
+      - EMAIL_FROM=Achats <achats@votredomaine.com>
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: procurement_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=REPLACE_ME_SECURE_PASSWORD
+      - POSTGRES_DB=procurement
+    volumes:
+      - procurement_pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432" # Uniquement accessible localement pour l'admin
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: procurement_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  procurement_pgdata:
+  caddy_data:
+  caddy_config:

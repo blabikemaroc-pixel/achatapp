@@ -1,0 +1,42 @@
+# Déploiement Render — plan 100% gratuit.
+# La base de données n'est PAS hébergée ici (le Postgres gratuit de Render est
+# supprimé après 30 jours). On utilise Neon (https://neon.tech) : crée une base,
+# copie sa "connection string" et colle-la dans la variable DATABASE_URL ci-dessous
+# depuis le dashboard Render (Environment).
+services:
+  - type: web
+    name: achats
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: master
+    # migrate deploy applique les migrations Prisma à chaque déploiement.
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: "20.18.0"
+      # ── À renseigner dans le dashboard Render ──
+      - key: DATABASE_URL # Connection string Neon (avec ?sslmode=require)
+        sync: false
+      - key: APP_URL # URL publique de ton service, ex: https://achats.onrender.com
+        sync: false
+      - key: AUTH_URL # même valeur que APP_URL
+        sync: false
+      # Généré automatiquement par Render (secret de session)
+      - key: AUTH_SECRET
+        generateValue: true
+      # ── E-mail (optionnel — laisse vide pour utiliser le bouton "copier/coller") ──
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

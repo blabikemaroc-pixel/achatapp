@@ -25,6 +25,10 @@ function normalize(input: SupplierInput) {
     address: clean(input.address),
     paymentTerms: clean(input.paymentTerms),
     notes: clean(input.notes),
+    ice: clean(input.ice),
+    rc: clean(input.rc),
+    if: clean(input.if),
+    tp: clean(input.tp),
   };
 }
 

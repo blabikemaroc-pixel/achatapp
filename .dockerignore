@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.env
+.env.*
+npm-debug.log*
+*.tsbuildinfo
+
+# Fichiers de travail / documents qui n'ont rien à faire dans l'image
+public/uploads
+*.docx
+*.doc
+*.pdf
+DOCUMENTATION.md
+*.md
+Caddyfile
+docker-compose*.yml

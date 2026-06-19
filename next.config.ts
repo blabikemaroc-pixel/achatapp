@@ -17,6 +17,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  allowedDevOrigins: ['172.31.160.1'],
+  // Les uploads (logos, justificatifs, preuves) passent par des Server Actions.
+  // La limite par défaut est 1 Mo : on l'élève pour accepter scans/PDF.
+  experimental: {
+    serverActions: { bodySizeLimit: "8mb" },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

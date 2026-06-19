@@ -37,6 +37,10 @@ export type Supplier = {
   address: string | null;
   paymentTerms: string | null;
   notes: string | null;
+  ice: string | null;
+  rc: string | null;
+  if: string | null;
+  tp: string | null;
 };
 
 function defaultsFor(supplier?: Supplier): SupplierInput {
@@ -48,6 +52,10 @@ function defaultsFor(supplier?: Supplier): SupplierInput {
     address: supplier?.address ?? "",
     paymentTerms: supplier?.paymentTerms ?? "",
     notes: supplier?.notes ?? "",
+    ice: supplier?.ice ?? "",
+    rc: supplier?.rc ?? "",
+    if: supplier?.if ?? "",
+    tp: supplier?.tp ?? "",
   };
 }
 
@@ -157,6 +165,30 @@ function SupplierFormDialog({
                 placeholder="Ex. 30 jours"
                 {...register("paymentTerms")}
               />
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Identifiants légaux (Optionnel)
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="s-ice">ICE</Label>
+                <Input id="s-ice" {...register("ice")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="s-rc">RC</Label>
+                <Input id="s-rc" {...register("rc")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="s-if">Identifiant Fiscal (IF)</Label>
+                <Input id="s-if" {...register("if")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="s-tp">Taxe Professionnelle (TP)</Label>
+                <Input id="s-tp" {...register("tp")} />
+              </div>
             </div>
           </div>
 

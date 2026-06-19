@@ -21,14 +21,19 @@ export default async function QuotePortalPage({
   const recipient = await prisma.rfqRecipient.findUnique({
     where: { token },
     include: {
-      supplier: { select: { name: true } },
+      supplier: {
+        select: {
+          name: true,
+          supplierProducts: { select: { productId: true } },
+        },
+      },
       quote: { include: { items: true } },
       rfq: {
         include: {
           items: {
             include: { product: { select: { id: true, name: true, unit: true } } },
           },
-          org: { select: { name: true } },
+          org: { select: { name: true, city: true } },
         },
       },
     },
@@ -37,7 +42,14 @@ export default async function QuotePortalPage({
 
   const { rfq, supplier, quote } = recipient;
 
-  const items: QuoteFormItem[] = rfq.items.map((it) => ({
+  // Le fournisseur ne cote que les produits qu'il fournit (∩ produits demandés).
+  const suppliedIds = new Set(
+    supplier.supplierProducts.map((sp) => sp.productId),
+  );
+  const filtered = rfq.items.filter((it) => suppliedIds.has(it.productId));
+  const items: QuoteFormItem[] = (
+    filtered.length > 0 ? filtered : rfq.items
+  ).map((it) => ({
     productId: it.productId,
     name: it.product.name,
     unit: it.product.unit,
@@ -66,41 +78,17 @@ export default async function QuotePortalPage({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 p-4 sm:p-8">
-      <header className="flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <ShoppingCart className="size-5" />
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{rfq.org.name}</p>
-          <h1 className="text-lg font-semibold">
-            Demande de prix {rfq.reference}
-          </h1>
-        </div>
-      </header>
-
-      <div className="space-y-1">
-        <p className="text-sm">
-          Bonjour <strong>{supplier.name}</strong>, merci d&apos;indiquer votre
-          meilleure offre
-          {rfq.dueDate ? (
-            <>
-              {" "}
-              avant le <strong>{formatDate(rfq.dueDate)}</strong>
-            </>
-          ) : null}
-          .
-        </p>
-        {rfq.notes ? (
-          <p className="text-sm text-muted-foreground">{rfq.notes}</p>
-        ) : null}
-      </div>
-
+    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 p-4 sm:p-8 bg-slate-50">
       <QuotePortalClient
         token={token}
         items={items}
         initial={initial}
         alreadyResponded={!!quote}
+        supplierName={supplier.name}
+        orgName={rfq.org.name}
+        orgCity={rfq.org.city}
+        rfqReference={rfq.reference}
+        rfqNotes={rfq.notes}
       />
     </div>
   );

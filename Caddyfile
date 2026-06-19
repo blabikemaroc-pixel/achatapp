@@ -1,0 +1,8 @@
+CLIENT.VOTRE-DOMAINE.COM {
+    reverse_proxy app:3000
+
+    # Activer la compression pour améliorer les performances
+    encode zstd gzip
+
+    # Redirection automatique HTTP vers HTTPS gérée par défaut par Caddy
+}

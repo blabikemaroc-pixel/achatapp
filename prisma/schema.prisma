@@ -16,6 +16,15 @@ model Organization {
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  logo      String?
+  address   String?
+  city      String?
+  phone     String?
+  email     String?
+  ice       String?
+  rc        String?
+  if        String?
+  tp        String?
 
   members        Membership[]
   categories     Category[]
@@ -23,6 +32,27 @@ model Organization {
   suppliers      Supplier[]
   rfqs           Rfq[]
   purchaseOrders PurchaseOrder[]
+  receipts       Receipt[]
+  invoices       Invoice[]
+  payments       Payment[]
+  files          StoredFile[]
+}
+
+// Fichiers binaires stockés directement en base (logos, justificatifs, preuves…).
+// Choix volontaire : l'hébergement gratuit a un disque éphémère ; stocker en base
+// garantit qu'aucun fichier n'est perdu lors d'un redémarrage / redéploiement.
+model StoredFile {
+  id        String   @id @default(cuid())
+  orgId     String
+  filename  String
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
 }
 
 enum Role {
@@ -129,6 +159,8 @@ model Product {
   rfqItems         RfqItem[]
   quoteItems       QuoteItem[]
   poItems          POItem[]
+  receiptItems     ReceiptItem[]
+  invoiceItems     InvoiceItem[]
 
   @@index([orgId])
   @@index([categoryId])
@@ -144,6 +176,10 @@ model Supplier {
   address      String?
   paymentTerms String?
   notes        String?
+  ice          String?
+  rc           String?
+  if           String?
+  tp           String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -274,7 +310,9 @@ enum POStatus {
   DRAFT
   SENT
   CONFIRMED
+  PARTIALLY_RECEIVED
   RECEIVED
+  INVOICED
   CANCELLED
 }
 
@@ -288,13 +326,17 @@ model PurchaseOrder {
   notes      String?
   total      Float     @default(0)
   pdfPath    String?
+  confirmationFile String?
   sentAt     DateTime?
+  printCount Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   supplier Supplier     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   items    POItem[]
+  receipts Receipt[]
+  invoices Invoice[]
 
   @@unique([orgId, reference])
   @@index([orgId])
@@ -311,4 +353,113 @@ model POItem {
   product Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([poId])
+}
+
+// ──────────────────────────── Bon de Réception (BL) ────────────────────────────
+
+model Receipt {
+  id         String   @id @default(cuid())
+  orgId      String
+  poId       String
+  reference  String   // Numéro du BL fournisseur
+  date       DateTime
+  notes      String?
+  fileUrl    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  po         PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  items      ReceiptItem[]
+
+  @@index([poId])
+}
+
+model ReceiptItem {
+  id          String @id @default(cuid())
+  receiptId   String
+  productId   String
+  quantity    Float
+
+  receipt     Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([receiptId])
+}
+
+// ──────────────────────────── Factures ────────────────────────────
+
+enum InvoiceStatus {
+  DRAFT
+  VALIDATED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  orgId        String
+  poId         String
+  reference    String        // Numéro de la facture fournisseur
+  date         DateTime
+  dueDate      DateTime?
+  amountHT     Float
+  tvaRate      Float         @default(0) // 0 if no TVA
+  amountTTC    Float
+  status       InvoiceStatus @default(DRAFT)
+  notes        String?
+  fileUrl      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  po           PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  items        InvoiceItem[]
+  payments     Payment[]
+
+  @@index([poId])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String
+  quantity    Float
+  unitPrice   Float
+
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceId])
+}
+
+// ──────────────────────────── Paiements ────────────────────────────
+
+enum PaymentMethod {
+  VIREMENT
+  CHEQUE
+  ESPECES
+  CARTE
+  TRAITE
+  AUTRE
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orgId       String
+  invoiceId   String
+  amount      Float
+  date        DateTime
+  method      PaymentMethod
+  reference   String?
+  fileUrl     String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
 }

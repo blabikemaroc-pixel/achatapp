@@ -37,6 +37,10 @@ export default async function SuppliersPage() {
         address: true,
         paymentTerms: true,
         notes: true,
+        ice: true,
+        rc: true,
+        if: true,
+        tp: true,
         _count: { select: { supplierProducts: true } },
       },
     }),
@@ -126,6 +130,10 @@ export default async function SuppliersPage() {
                         address: supplier.address,
                         paymentTerms: supplier.paymentTerms,
                         notes: supplier.notes,
+                        ice: supplier.ice,
+                        rc: supplier.rc,
+                        if: supplier.if,
+                        tp: supplier.tp,
                       }}
                       products={productOptions}
                       selectedProductIds={productsBySupplier.get(supplier.id) ?? []}
