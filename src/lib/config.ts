@@ -1,5 +1,5 @@
 // Réglages globaux de l'application — modifiables ici en un seul endroit.
-export const APP_NAME = "Achats";
+export const APP_NAME = "Devizo";
 export const APP_DESCRIPTION =
   "Comparez les prix de vos fournisseurs et envoyez vos bons de commande.";
 

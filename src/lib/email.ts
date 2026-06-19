@@ -20,7 +20,7 @@ export async function sendMail(opts: {
   attachments?: { filename: string; content: Buffer }[];
 }) {
   return transporter.sendMail({
-    from: process.env.EMAIL_FROM ?? "Achats <noreply@procurement.local>",
+    from: process.env.EMAIL_FROM ?? "Devizo <noreply@procurement.local>",
     ...opts,
   });
 }

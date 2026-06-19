@@ -1,9 +1,13 @@
 "use client";
 
-import { useTransition, useRef } from "react";
+import { useTransition, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, Building2 } from "lucide-react";
-import { updateOrganizationSettings, deleteOrganizationLogo } from "./actions";
+import { Upload, Trash2, Building2, KeyRound } from "lucide-react";
+import {
+  updateOrganizationSettings,
+  deleteOrganizationLogo,
+  changePassword,
+} from "./actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +61,7 @@ export function SettingsForm({ org }: { org: Organization }) {
   };
 
   return (
+    <div className="space-y-8">
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
       <Card>
         <CardHeader>
@@ -177,6 +182,97 @@ export function SettingsForm({ org }: { org: Organization }) {
           {isPending ? "Enregistrement..." : "Enregistrer les modifications"}
         </Button>
       </div>
+    </form>
+
+      <PasswordSection />
+    </div>
+  );
+}
+
+function PasswordSection() {
+  const [isPending, startTransition] = useTransition();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (next.length < 8) {
+      toast.error("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (next !== confirm) {
+      toast.error("La confirmation ne correspond pas au nouveau mot de passe.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await changePassword(current, next);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Mot de passe modifié.");
+        setCurrent("");
+        setNext("");
+        setConfirm("");
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5" />
+            Mot de passe
+          </CardTitle>
+          <CardDescription>
+            Modifiez votre mot de passe de connexion. Minimum 8 caractères.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Mot de passe actuel</Label>
+              <Input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nouveau mot de passe</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmer</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Modification..." : "Changer le mot de passe"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </form>
   );
 }

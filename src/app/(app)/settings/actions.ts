@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 
 import { getOrgContext } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
@@ -81,5 +82,37 @@ export async function deleteOrganizationLogo() {
   });
 
   revalidatePath("/settings");
+  return { success: true };
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+) {
+  const { userId } = await getOrgContext();
+
+  if (!newPassword || newPassword.length < 8) {
+    return { error: "Le nouveau mot de passe doit contenir au moins 8 caractères." };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+  if (!user?.passwordHash) {
+    return { error: "Utilisateur introuvable." };
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    return { error: "Le mot de passe actuel est incorrect." };
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null },
+  });
+
   return { success: true };
 }
