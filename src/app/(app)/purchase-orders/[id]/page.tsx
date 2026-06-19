@@ -135,7 +135,7 @@ export default async function PoDetailPage({
         receiptCount={po.receipts.length}
         invoiceCount={po.invoices.length}
         unpaidInvoiceCount={po.invoices.filter(inv => {
-          const totalPaid = inv.payments.reduce((s: number, p: any) => s + p.amount, 0);
+          const totalPaid = inv.payments.reduce((s: number, p: { amount: number }) => s + p.amount, 0);
           return inv.amountTTC - totalPaid > 0.01;
         }).length}
       />

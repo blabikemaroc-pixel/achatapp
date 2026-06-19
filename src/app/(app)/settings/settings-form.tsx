@@ -60,7 +60,7 @@ export function SettingsForm({ org }: { org: Organization }) {
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Profil de l'entreprise</CardTitle>
+          <CardTitle>Profil de l&apos;entreprise</CardTitle>
           <CardDescription>
             Ces informations apparaîtront sur vos bons de commande et demandes de prix.
           </CardDescription>
@@ -72,6 +72,7 @@ export function SettingsForm({ org }: { org: Organization }) {
               <div className="flex items-center gap-4">
                 {org.logo ? (
                   <div className="relative h-20 w-32 rounded-md border bg-muted p-2 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- logo servi depuis /files (route auth), pas d'optimisation next/image nécessaire */}
                     <img
                       src={`/files/${org.logo}`}
                       alt="Logo"
@@ -119,7 +120,7 @@ export function SettingsForm({ org }: { org: Organization }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Nom de l'entreprise <span className="text-destructive">*</span></Label>
+              <Label htmlFor="name">Nom de l&apos;entreprise <span className="text-destructive">*</span></Label>
               <Input id="name" name="name" defaultValue={org.name} required />
             </div>
             <div className="space-y-2">

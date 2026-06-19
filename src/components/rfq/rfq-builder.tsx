@@ -67,6 +67,8 @@ export function RfqBuilder({
   // À chaque changement de la liste de produits, présélectionner tous les
   // fournisseurs éligibles.
   useEffect(() => {
+    // Resynchronise la sélection quand la liste de produits change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedSuppliers(new Set(eligibleSuppliers.map((s) => s.id)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey]);

@@ -248,7 +248,7 @@ export function CompareMatrix({
         <div className="flex justify-end pt-4">
           <Button size="lg" onClick={submit} disabled={pending} className="px-8 shadow-md">
             {pending && <Loader2 className="mr-2 size-5 animate-spin" />}
-            Valider l'adjudication & Générer les BC
+            Valider l&apos;adjudication &amp; Générer les BC
           </Button>
         </div>
       )}

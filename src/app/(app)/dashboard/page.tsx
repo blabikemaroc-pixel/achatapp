@@ -1,19 +1,16 @@
 import Link from "next/link";
 import {
-  ArrowRight,
   ClipboardList,
   CreditCard,
   FileText,
   ReceiptText,
   TrendingDown,
   TrendingUp,
-  Package,
   Truck,
   Building2,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
-import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -265,7 +262,7 @@ export default async function DashboardPage() {
               <Truck className="size-4" />
               Top fournisseurs
             </CardTitle>
-            <CardDescription>Vos principaux fournisseurs en volume d'achats.</CardDescription>
+            <CardDescription>Vos principaux fournisseurs en volume d&apos;achats.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 space-y-4">
             {topSuppliers.length === 0 ? (
@@ -298,7 +295,7 @@ export default async function DashboardPage() {
               <ClipboardList className="size-4" />
               Dernières commandes
             </CardTitle>
-            <CardDescription>Activité d'achat la plus récente.</CardDescription>
+            <CardDescription>Activité d&apos;achat la plus récente.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1">
             {recentPOs.length === 0 ? (

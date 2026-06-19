@@ -11,7 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export function ReceiptForm({ po }: { po: any }) {
+type ReceiptPoItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  product: { name: string; unit: string };
+};
+type ReceiptPo = {
+  id: string;
+  items: ReceiptPoItem[];
+  receipts: { items: { productId: string; quantity: number }[] }[];
+};
+
+export function ReceiptForm({ po }: { po: ReceiptPo }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -44,11 +56,11 @@ export function ReceiptForm({ po }: { po: any }) {
     }
 
     const itemsToReceive = po.items
-      .map((it: any) => ({
+      .map((it) => ({
         productId: it.productId,
         quantity: parseFloat(received[it.productId] || "0"),
       }))
-      .filter((i: any) => i.quantity > 0);
+      .filter((i) => i.quantity > 0);
 
     if (itemsToReceive.length === 0) {
       toast.error("Veuillez saisir au moins une quantité reçue.");
@@ -124,7 +136,7 @@ export function ReceiptForm({ po }: { po: any }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {po.items.map((item: any) => {
+              {po.items.map((item) => {
                 let already = 0;
                 for (const r of po.receipts) {
                   for (const ri of r.items) {

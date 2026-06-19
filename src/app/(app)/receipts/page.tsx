@@ -4,14 +4,6 @@ import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getOrgContext } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";

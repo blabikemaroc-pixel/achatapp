@@ -1,7 +1,6 @@
 import "server-only";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
-import { APP_CURRENCY } from "@/lib/config";
 import { prisma } from "@/lib/db";
 
 export type PoPdfData = {
@@ -44,17 +43,13 @@ function clean(value: string) {
   return value.replace(/[^\x00-\xFF]/g, "");
 }
 
-function money(value: number) {
-  return `${value.toFixed(2).replace(".", ",")} ${APP_CURRENCY}`;
-}
-
 function frDate(date: Date) {
   const d = String(date.getDate()).padStart(2, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
   return `${d}/${m}/${date.getFullYear()}`;
 }
 
-// @ts-ignore
+// @ts-expect-error — le paquet "written-number" ne fournit pas de types.
 import writtenNumber from "written-number";
 
 export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
@@ -62,14 +57,11 @@ export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
   const page = doc.addPage([595, 842]); // A4
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
 
   const black = rgb(0, 0, 0);
-  const textGray = rgb(0.2, 0.2, 0.2); 
-  const lineGray = rgb(0.8, 0.8, 0.8);
-  const bgHeader = rgb(0.9, 0.9, 0.9);
+  const textGray = rgb(0.2, 0.2, 0.2);
 
-  const left = 40; 
+  const left = 40;
   const right = 555; 
   let y = 800;
 
@@ -77,7 +69,7 @@ export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
     s: string,
     x: number,
     yPos: number,
-    opts: { size?: number; font?: any; color?: ReturnType<typeof rgb> } = {},
+    opts: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb> } = {},
   ) =>
     page.drawText(clean(s), {
       x,
@@ -91,7 +83,7 @@ export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
     s: string,
     xRight: number,
     yPos: number,
-    opts: { size?: number; font?: any; color?: ReturnType<typeof rgb> } = {},
+    opts: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb> } = {},
   ) => {
     const size = opts.size ?? 10;
     const f = opts.font ?? font;
@@ -102,7 +94,7 @@ export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
   const centerText = (
     s: string,
     yPos: number,
-    opts: { size?: number; font?: any; color?: ReturnType<typeof rgb> } = {},
+    opts: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb> } = {},
   ) => {
     const size = opts.size ?? 10;
     const f = opts.font ?? font;
@@ -309,8 +301,6 @@ export async function generatePoPdf(po: PoPdfData): Promise<Uint8Array> {
   // --- FOOTER BLOCK ---
   // Anchor to the bottom to match the original template spacing
   y = Math.min(y - 40, 250);
-
-  const subtotal = po.items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
 
   text("Total HT :", right - 220, y, { size: 14, font: bold });
   rightText(`${po.total.toFixed(2).replace(".", ",")}   MAD`, right - 40, y, { size: 10 });

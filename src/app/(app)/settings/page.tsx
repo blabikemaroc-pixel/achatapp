@@ -1,5 +1,3 @@
-import { Settings } from "lucide-react";
-
 import { PageHeader } from "@/components/page-header";
 import { SettingsForm } from "./settings-form";
 import { getOrgContext } from "@/lib/auth-helpers";

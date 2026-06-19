@@ -1,4 +1,3 @@
-import { ShoppingCart } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
@@ -7,7 +6,6 @@ import {
 } from "@/components/quote/quote-form";
 import { QuotePortalClient } from "@/components/quote/quote-portal-client";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/format";
 
 export const metadata = { title: "Demande de prix" };
 

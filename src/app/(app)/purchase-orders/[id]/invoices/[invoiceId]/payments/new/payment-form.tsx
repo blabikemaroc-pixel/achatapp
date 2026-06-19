@@ -21,7 +21,7 @@ import { formatCurrency } from "@/lib/format";
 
 type PaymentMethod = "VIREMENT" | "CHEQUE" | "ESPECES" | "CARTE" | "TRAITE" | "AUTRE";
 
-export function PaymentForm({ invoice, poId, remaining }: { invoice: any; poId: string; remaining: number }) {
+export function PaymentForm({ invoice, poId, remaining }: { invoice: { id: string }; poId: string; remaining: number }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 

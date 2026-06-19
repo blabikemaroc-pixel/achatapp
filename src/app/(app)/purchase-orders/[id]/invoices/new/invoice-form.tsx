@@ -11,7 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export function InvoiceForm({ po }: { po: any }) {
+type InvoicePoItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  product: { name: string; unit: string };
+};
+type InvoicePo = { id: string; items: InvoicePoItem[] };
+
+export function InvoiceForm({ po }: { po: InvoicePo }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -34,7 +43,7 @@ export function InvoiceForm({ po }: { po: any }) {
     return initial;
   });
 
-  const totalHT = po.items.reduce((sum: number, it: any) => {
+  const totalHT = po.items.reduce((sum: number, it) => {
     const data = invoiceItems[it.productId];
     const q = parseFloat(data?.quantity || "0");
     const p = parseFloat(data?.unitPrice || "0");
@@ -51,7 +60,7 @@ export function InvoiceForm({ po }: { po: any }) {
     }
 
     const itemsToInvoice = po.items
-      .map((it: any) => {
+      .map((it) => {
         const data = invoiceItems[it.productId];
         return {
           productId: it.productId,
@@ -59,7 +68,7 @@ export function InvoiceForm({ po }: { po: any }) {
           unitPrice: parseFloat(data?.unitPrice || "0"),
         };
       })
-      .filter((i: any) => i.quantity > 0);
+      .filter((i) => i.quantity > 0);
 
     if (itemsToInvoice.length === 0) {
       toast.error("La facture doit contenir au moins un produit.");
@@ -123,7 +132,7 @@ export function InvoiceForm({ po }: { po: any }) {
           />
         </div>
         <div className="space-y-2">
-          <Label>Date d'échéance</Label>
+          <Label>Date d&apos;échéance</Label>
           <Input
             type="date"
             value={dueDate}
@@ -154,7 +163,7 @@ export function InvoiceForm({ po }: { po: any }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {po.items.map((item: any) => {
+              {po.items.map((item) => {
                 const data = invoiceItems[item.productId];
                 const q = parseFloat(data?.quantity || "0");
                 const p = parseFloat(data?.unitPrice || "0");

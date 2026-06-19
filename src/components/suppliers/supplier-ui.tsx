@@ -238,6 +238,8 @@ function SupplierProductsDialog({
 
   useEffect(() => {
     if (open) {
+      // Réinitialise la sélection à l'ouverture du dialogue.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelected(new Set(selectedProductIds));
       setQuery("");
     }

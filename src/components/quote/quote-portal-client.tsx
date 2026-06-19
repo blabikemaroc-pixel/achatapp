@@ -209,7 +209,7 @@ export function QuotePortalClient({
       </div>
       
       <p className="text-center text-sm text-gray-400 pb-8">
-        Dans l'attente de votre accord, nous vous prions d'agréer nos salutations les plus distinguées.
+        Dans l&apos;attente de votre accord, nous vous prions d&apos;agréer nos salutations les plus distinguées.
       </p>
     </div>
   );

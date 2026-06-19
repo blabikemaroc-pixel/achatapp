@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { CheckCircle2, CreditCard, Loader2, Package, PackageCheck, ReceiptText, Send, XCircle } from "lucide-react";
+import { CheckCircle2, CreditCard, Loader2, Package, ReceiptText, Send, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -23,7 +23,7 @@ interface PoActionsProps {
   unpaidInvoiceCount?: number;
 }
 
-export function PoActions({ poId, status, receiptCount = 0, invoiceCount = 0, unpaidInvoiceCount = 0 }: PoActionsProps) {
+export function PoActions({ poId, status, unpaidInvoiceCount = 0 }: PoActionsProps) {
   const [pending, startTransition] = useTransition();
 
   const handleUploadConfirmation = async (e: React.ChangeEvent<HTMLInputElement>) => {
