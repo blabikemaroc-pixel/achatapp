@@ -47,3 +47,6 @@ next-env.d.ts
 *.docx
 *.doc
 *.pdf
+
+# fichier privé d'identifiants — NE JAMAIS versionner
+IDENTIFIANTS-PRIVE.md
